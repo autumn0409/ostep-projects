@@ -47,7 +47,7 @@ void client_print(int fd) {
 
     // Read and display the HTTP Header
     n = readline_or_die(fd, buf, MAXBUF);
-    while (strcmp(buf, "\r\n") && (n > 0)) {
+    while (strcmp(buf, "\r\n") && (n > 1)) {
         printf("Header: %s", buf);
         n = readline_or_die(fd, buf, MAXBUF);
 
