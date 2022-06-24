@@ -147,9 +147,7 @@ void request_serve_static(int fd, char *filename, int filesize) {
 }
 
 // handle a request
-void *request_handle(void *conn_fd) {
-    int fd = *(int *)conn_fd;
-
+void request_handle(int fd) {
     int is_static;
     struct stat sbuf;
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
