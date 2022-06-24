@@ -147,7 +147,9 @@ void request_serve_static(int fd, char *filename, int filesize) {
 }
 
 // handle a request
-void request_handle(int fd) {
+void *request_handle(void *conn_fd) {
+    int fd = *(int *)conn_fd;
+
     int is_static;
     struct stat sbuf;
     char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
@@ -182,4 +184,5 @@ void request_handle(int fd) {
         }
         request_serve_dynamic(fd, filename, cgiargs);
     }
+    close_or_die(fd);
 }
