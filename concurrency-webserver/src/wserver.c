@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "io_helper.h"
+#include "request.h"
 #include "threadpool.h"
 
 char default_root[] = ".";
@@ -39,18 +40,31 @@ int main(int argc, char *argv[]) {
     // create thread pool
     threadpool_t *pool;
     assert((pool = threadpool_create(thread_count, queue_size)) != NULL);
-    fprintf(stderr,
-            "Pool started with %d threads and "
-            "queue size of %d\n",
-            thread_count, queue_size);
+    printf("Thread pool started with %d threads and queue size of %d.\n",
+           thread_count, queue_size);
 
     // now, get to work
     int listen_fd = open_listen_fd_or_die(port);
+    printf("Server start listening...\n");
     while (1) {
         struct sockaddr_in client_addr;
         int client_len = sizeof(client_addr);
-        int conn_fd = accept_or_die(listen_fd, (sockaddr_t *)&client_addr, (socklen_t *)&client_len);
-        assert(threadpool_add(pool, conn_fd) == 0);
+        int conn_fd = accept_or_die(listen_fd, (sockaddr_t *)&client_addr,
+                                    (socklen_t *)&client_len);
+
+        int err = threadpool_add(pool, conn_fd);
+        if (err == 0)
+            continue;
+        else if (err == -1) {
+            fprintf(stderr, "Add task failed\n");
+            request_error(conn_fd, "", "500", "Add task failed",
+                          "add task to buffer failed");
+            close_or_die(conn_fd);
+            continue;
+        } else {
+            fprintf(stderr, "thread pool error: %d.\n", err);
+            exit(err);
+        }
     }
     return 0;
 }
