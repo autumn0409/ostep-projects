@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 #include "io_helper.h"
-#include "request.h"
 #include "queue.h"
+#include "request.h"
 
 typedef enum {
     immediate_shutdown = 1,
@@ -114,8 +114,10 @@ int threadpool_add(threadpool_t *pool, int fd) {
         }
 
         /* Add task to queue */
-        if (int return_v = enqueue(pool->task_queue, fd, priority) < 0) {
-            err = return_v == -1 ? threadpool_queue_full : threadpool_queue_malloc_failure;
+        int return_v_from_enqueue = enqueue(pool->task_queue, fd, priority);
+        if (return_v_from_enqueue < 0) {
+            err = (return_v_from_enqueue == -1) ? threadpool_queue_full
+                                                : threadpool_queue_malloc_failure;
             break;
         }
 

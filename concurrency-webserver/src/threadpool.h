@@ -9,7 +9,7 @@ typedef struct threadpool_t threadpool_t;
 
 typedef enum {
     threadpool_queue_full = -1,
-    threadpool_queue_malloc_failure = -2
+    threadpool_queue_malloc_failure = -2,
     threadpool_invalid = -3,
     threadpool_lock_failure = -4,
     threadpool_shutdown = -5,
