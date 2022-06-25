@@ -1,14 +1,11 @@
-/**
- * @file threadpool.c
- * @brief Threadpool implementation file
- */
-
 #include "threadpool.h"
-#include "request.h"
 
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#include "io_helper.h"
+#include "request.h"
 
 typedef enum {
     immediate_shutdown = 1,
@@ -241,6 +238,9 @@ static void *threadpool_thread(void *threadpool) {
 
         /* Get to work */
         request_handle(fd);
+
+        /* close connection */
+        close_or_die(fd);
     }
 
     pool->started--;

@@ -182,5 +182,4 @@ void request_handle(int fd) {
         }
         request_serve_dynamic(fd, filename, cgiargs);
     }
-    close_or_die(fd);
 }
