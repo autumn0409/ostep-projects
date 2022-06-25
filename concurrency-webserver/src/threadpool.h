@@ -8,11 +8,12 @@ extern "C" {
 typedef struct threadpool_t threadpool_t;
 
 typedef enum {
-    threadpool_add_task_failure = -1,
-    threadpool_invalid = -2,
-    threadpool_lock_failure = -3,
-    threadpool_shutdown = -4,
-    threadpool_thread_failure = -5
+    threadpool_queue_full = -1,
+    threadpool_queue_malloc_failure = -2
+    threadpool_invalid = -3,
+    threadpool_lock_failure = -4,
+    threadpool_shutdown = -5,
+    threadpool_thread_failure = -6
 } threadpool_error_t;
 
 typedef enum {

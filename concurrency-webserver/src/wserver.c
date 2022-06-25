@@ -56,12 +56,20 @@ int main(int argc, char *argv[]) {
         if (err == 0)
             continue;
         else if (err == -1) {
-            fprintf(stderr, "Add task failed\n");
-            request_error(conn_fd, "", "500", "Add task failed",
-                          "add task to buffer failed");
+            fprintf(stderr, "Task buffer full\n");
+            request_error(conn_fd, "", "500", "Task buffer full",
+                          "task buffer is full now, try again latter");
             close_or_die(conn_fd);
             continue;
-        } else {
+        }
+        else if (err == -2) {
+            fprintf(stderr, "Add task failed\n");
+            request_error(conn_fd, "", "500", "Add task failed",
+                          "malloc failed while adding task to buffer");
+            close_or_die(conn_fd);
+            continue;
+        }
+        else {
             fprintf(stderr, "thread pool error: %d.\n", err);
             exit(err);
         }

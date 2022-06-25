@@ -114,8 +114,8 @@ int threadpool_add(threadpool_t *pool, int fd) {
         }
 
         /* Add task to queue */
-        if (enqueue(pool->task_queue, fd, priority) == false) {
-            err = threadpool_add_task_failure;
+        if (int return_v = enqueue(pool->task_queue, fd, priority) < 0) {
+            err = return_v == -1 ? threadpool_queue_full : threadpool_queue_malloc_failure;
             break;
         }
 

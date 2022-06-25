@@ -1,7 +1,7 @@
 #include "queue.h"
 
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
 typedef struct node_t node_t;
 
@@ -54,15 +54,15 @@ bool queue_is_empty(const queue_t *self) {
     return self->count == 0 ? true : false;
 }
 
-bool enqueue(queue_t *self, int fd, int p) {
+int enqueue(queue_t *self, int fd, int p) {
     assert(self);
 
     if (self->count == self->queue_size)
-        return false;
+        return -1;
 
     node_t *new_node = create_new_node(fd, p);
     if (!new_node)
-        return false;
+        return -2;
 
     if (!self->head) {
         self->head = new_node;
@@ -74,7 +74,7 @@ bool enqueue(queue_t *self, int fd, int p) {
     }
 
     self->count++;
-    return true;
+    return 0;
 }
 
 int dequeue(queue_t *self) {
