@@ -10,9 +10,15 @@
 #define MAXBUF (8192)
 
 void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg) {
-    char buf[MAXBUF], body[MAXBUF];
+    char errmsg[MAXBUF], buf[MAXBUF], body[MAXBUF];
 
     // Create the body of error message first (have to know its length for header)
+    sprintf(errmsg, longmsg);
+    if (strlen(cause) > 0) {
+        strncat(errmsg, ": ", 2);
+        strncat(errmsg, cause, strlen(cause));
+    }
+
     sprintf(body,
             ""
             "<!doctype html>\r\n"
@@ -21,10 +27,10 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
             "</head>\r\n"
             "<body>\r\n"
             "  <h2>%s: %s</h2>\r\n"
-            "  <p>%s: %s</p>\r\n"
+            "  <p>%s</p>\r\n"
             "</body>\r\n"
             "</html>\r\n",
-            errnum, shortmsg, longmsg, cause);
+            errnum, shortmsg, errmsg);
 
     // Write out the header information for this response
     sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
