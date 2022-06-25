@@ -5,24 +5,12 @@
 extern "C" {
 #endif
 
-/**
- * @file threadpool.h
- * @brief Threadpool Header File
- */
-
-/**
- * Increase this constants at your own risk
- * Large values might slow down your system
- */
-#define MAX_THREADS 64
-#define MAX_QUEUE 65536
-
 typedef struct threadpool_t threadpool_t;
 
 typedef enum {
-    threadpool_invalid = -1,
-    threadpool_lock_failure = -2,
-    threadpool_queue_full = -3,
+    threadpool_add_task_failure = -1,
+    threadpool_invalid = -2,
+    threadpool_lock_failure = -3,
     threadpool_shutdown = -4,
     threadpool_thread_failure = -5
 } threadpool_error_t;
