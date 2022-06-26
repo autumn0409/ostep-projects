@@ -1,7 +1,6 @@
 #include "request.h"
 
 #include "io_helper.h"
-
 //
 // Some of this code stolen from Bryant/O'Halloran
 // Hopefully this is not a problem ... :)
@@ -152,37 +151,56 @@ void request_serve_static(int fd, char *filename, int filesize) {
     munmap_or_die(srcp, filesize);
 }
 
-// handle a request
-void request_handle(int fd) {
-    int is_static;
+int request_preprocessing(node_t *new_node) {
+    char buf[MAXBUF];
     struct stat sbuf;
-    char buf[MAXBUF], method[MAXBUF], uri[MAXBUF], version[MAXBUF];
-    char filename[MAXBUF], cgiargs[MAXBUF];
 
-    readline_or_die(fd, buf, MAXBUF);
-    sscanf(buf, "%s %s %s", method, uri, version);
-    printf("method:%s uri:%s version:%s\n", method, uri, version);
+    readline_or_die(new_node->fd, buf, MAXBUF);
+    sscanf(buf, "%s %s %s", new_node->method, new_node->uri, new_node->version);
 
+    request_read_headers(new_node->fd);
+
+    new_node->is_static = request_parse_uri(new_node->uri, new_node->filename, new_node->cgiargs);
+    if (stat(new_node->filename, &sbuf) < 0) {
+        return -1;
+    }
+
+    new_node->file_st_mode = sbuf.st_mode;
+    new_node->file_st_size = sbuf.st_size;
+
+    return 0;
+}
+
+// handle a request
+void request_handle(node_t *task_node) {
+    int fd = task_node->fd;
+    int is_static = task_node->is_static;
+    char *method = task_node->method;
+    char *filename = task_node->filename;
+    char *cgiargs = task_node->cgiargs;
+    mode_t file_st_mode = task_node->file_st_mode;
+
+    // print request
+    char full_uri[MAXBUF];
+    sprintf(full_uri, task_node->uri);
+    if (strlen(cgiargs) > 0) {
+        strncat(full_uri, "?", 1);
+        strncat(full_uri, cgiargs, strlen(cgiargs));
+    }
+    printf("method:%s uri:%s version:%s\n", method, full_uri, task_node->version);
     if (strcasecmp(method, "GET")) {
         request_error(fd, method, "501", "Not Implemented", "server does not implement this method");
         return;
     }
-    request_read_headers(fd);
-
-    is_static = request_parse_uri(uri, filename, cgiargs);
-    if (stat(filename, &sbuf) < 0) {
-        request_error(fd, filename, "404", "Not found", "server could not find this file");
-        return;
-    }
 
     if (is_static) {
-        if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
+        if (!(S_ISREG(file_st_mode)) || !(S_IRUSR & file_st_mode)) {
             request_error(fd, filename, "403", "Forbidden", "server could not read this file");
             return;
         }
-        request_serve_static(fd, filename, sbuf.st_size);
+        request_serve_static(fd, filename, task_node->file_st_size);
     } else {
-        if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
+        if (!(S_ISREG(file_st_mode)) || !(S_IXUSR & file_st_mode)) {
             request_error(fd, filename, "403", "Forbidden", "server could not run this CGI program");
             return;
         }

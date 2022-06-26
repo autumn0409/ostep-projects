@@ -1,42 +1,15 @@
 #include "threadpool.h"
 
-#include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include "io_helper.h"
-#include "queue.h"
 #include "request.h"
 
 typedef enum {
     immediate_shutdown = 1,
     graceful_shutdown = 2
 } threadpool_shutdown_t;
-
-/**
- *  @struct threadpool
- *  @brief The threadpool struct
- *
- *  @var notify       Condition variable to notify worker threads.
- *  @var threads      Array containing worker threads ID.
- *  @var thread_count Number of threads
- *  @var task_queue   Priority queue containing the tasks.
- *  @var shutdown     Flag indicating if the pool is shutting down
- *  @var started      Number of started threads
- */
-struct threadpool_t {
-    pthread_mutex_t lock;
-    pthread_cond_t notify;
-    pthread_t *threads;
-    int thread_count;
-    queue_t *task_queue;
-    int shutdown;
-    int started;
-};
-
-int get_priority(int fd) {
-    return 0;
-}
 
 /**
  * @function void *threadpool_thread(void *threadpool)
@@ -94,9 +67,8 @@ err:
     return NULL;
 }
 
-int threadpool_add(threadpool_t *pool, int fd) {
+int threadpool_add(threadpool_t *pool, node_t *task_node) {
     int err = 0;
-    int priority = get_priority(fd);
 
     if (pool == NULL) {
         return threadpool_invalid;
@@ -114,10 +86,8 @@ int threadpool_add(threadpool_t *pool, int fd) {
         }
 
         /* Add task to queue */
-        int return_v_from_enqueue = enqueue(pool->task_queue, fd, priority);
-        if (return_v_from_enqueue < 0) {
-            err = (return_v_from_enqueue == -1) ? threadpool_queue_full
-                                                : threadpool_queue_malloc_failure;
+        if (enqueue(pool->task_queue, task_node) != 0) {
+            err = threadpool_queue_full;
             break;
         }
 
@@ -210,27 +180,30 @@ static void *threadpool_thread(void *threadpool) {
 
         /* Wait on condition variable, check for spurious wakeups.
            When returning from pthread_cond_wait(), we own the lock. */
-        while (queue_is_empty(pool->task_queue) && (!pool->shutdown)) {
+        while (pool->task_queue->count == 0 && (!pool->shutdown)) {
             pthread_cond_wait(&(pool->notify), &(pool->lock));
         }
 
         if ((pool->shutdown == immediate_shutdown) ||
             ((pool->shutdown == graceful_shutdown) &&
-             queue_is_empty(pool->task_queue))) {
+             pool->task_queue->count == 0)) {
             break;
         }
 
         /* Grab our task */
-        int fd = dequeue(pool->task_queue);
+        node_t *task_node = dequeue(pool->task_queue);
 
         /* Unlock */
         pthread_mutex_unlock(&(pool->lock));
 
         /* Get to work */
-        request_handle(fd);
+        request_handle(task_node);
 
         /* close connection */
-        close_or_die(fd);
+        close_or_die(task_node->fd);
+
+        /* free node */
+        free(task_node);
     }
 
     pool->started--;

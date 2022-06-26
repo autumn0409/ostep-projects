@@ -52,25 +52,36 @@ int main(int argc, char *argv[]) {
         int conn_fd = accept_or_die(listen_fd, (sockaddr_t *)&client_addr,
                                     (socklen_t *)&client_len);
 
-        int err = threadpool_add(pool, conn_fd);
-        if (err == 0)
-            continue;
-        else if (err == -1) {
-            fprintf(stderr, "Task buffer full\n");
-            request_error(conn_fd, NULL, "500", "Task buffer full",
-                          "task buffer is full now, try again latter");
-            close_or_die(conn_fd);
-            continue;
-        }
-        else if (err == -2) {
-            fprintf(stderr, "Add task failed\n");
+        node_t *new_node = create_new_node(conn_fd);
+        if (!new_node) {
             request_error(conn_fd, NULL, "500", "Add task failed",
                           "malloc failed while adding task to buffer");
             close_or_die(conn_fd);
             continue;
         }
+
+        if (request_preprocessing(new_node) != 0) {
+            request_error(conn_fd, new_node->filename,
+                          "404", "Not found", "server could not find this file");
+            free(new_node);
+            close_or_die(conn_fd);
+            continue;
+        }
+
+        int err = threadpool_add(pool, new_node);
+        if (err == 0)
+            continue;
+        else if (err == -1) {
+            request_error(conn_fd, NULL, "500", "Task buffer full",
+                          "task buffer is full now, try again latter");
+            close_or_die(conn_fd);
+            free(new_node);
+            continue;
+        }
         else {
             fprintf(stderr, "thread pool error: %d.\n", err);
+            close_or_die(conn_fd);
+            free(new_node);
             exit(err);
         }
     }
