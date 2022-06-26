@@ -14,7 +14,7 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
 
     // Create the body of error message first (have to know its length for header)
     sprintf(errmsg, longmsg);
-    if (strlen(cause) > 0) {
+    if (cause) {
         strncat(errmsg, ": ", 2);
         strncat(errmsg, cause, strlen(cause));
     }

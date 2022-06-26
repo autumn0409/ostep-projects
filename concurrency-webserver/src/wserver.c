@@ -57,14 +57,14 @@ int main(int argc, char *argv[]) {
             continue;
         else if (err == -1) {
             fprintf(stderr, "Task buffer full\n");
-            request_error(conn_fd, "", "500", "Task buffer full",
+            request_error(conn_fd, NULL, "500", "Task buffer full",
                           "task buffer is full now, try again latter");
             close_or_die(conn_fd);
             continue;
         }
         else if (err == -2) {
             fprintf(stderr, "Add task failed\n");
-            request_error(conn_fd, "", "500", "Add task failed",
+            request_error(conn_fd, NULL, "500", "Add task failed",
                           "malloc failed while adding task to buffer");
             close_or_die(conn_fd);
             continue;
