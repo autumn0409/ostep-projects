@@ -12,10 +12,10 @@ void request_error(int fd, char *cause, char *errnum, char *shortmsg, char *long
     char errmsg[MAXBUF], buf[MAXBUF], body[MAXBUF];
 
     // Create the body of error message first (have to know its length for header)
-    sprintf(errmsg, longmsg);
+    strncpy(errmsg, longmsg, MAXBUF);
     if (cause) {
-        strncat(errmsg, ": ", 2);
-        strncat(errmsg, cause, strlen(cause));
+        strcat(errmsg, ": ");
+        strcat(errmsg, cause);
     }
 
     sprintf(body,
@@ -182,10 +182,10 @@ void request_handle(node_t *task_node) {
 
     // print request
     char full_uri[MAXBUF];
-    sprintf(full_uri, task_node->uri);
+    strncpy(full_uri, task_node->uri, MAXBUF);
     if (strlen(cgiargs) > 0) {
-        strncat(full_uri, "?", 1);
-        strncat(full_uri, cgiargs, strlen(cgiargs));
+        strcat(full_uri, "?");
+        strcat(full_uri, cgiargs);
     }
     printf("method:%s uri:%s version:%s\n", method, full_uri, task_node->version);
     if (strcasecmp(method, "GET")) {
