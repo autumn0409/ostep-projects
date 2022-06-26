@@ -1,21 +1,24 @@
 #include <pthread.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "io_helper.h"
 #include "request.h"
 #include "threadpool.h"
 
 char default_root[] = ".";
+char default_schedalg[] = "FIFO";
 
 //
-// ./wserver [-d <basedir>] [-p <portnum>] [-t threads] [-b buffers]
+// ./wserver [-d <basedir>] [-p <portnum>] [-t threads] [-b buffers] [-s schedalg]
 //
 int main(int argc, char *argv[]) {
     int c;
     char *root_dir = default_root;
+    char *schedalg = default_schedalg;
     int port = 10000, thread_count = 1, queue_size = 1;
 
-    while ((c = getopt(argc, argv, "d:p:t:b:")) != -1)
+    while ((c = getopt(argc, argv, "d:p:t:b:s:")) != -1)
         switch (c) {
             case 'd':
                 root_dir = optarg;
@@ -29,8 +32,16 @@ int main(int argc, char *argv[]) {
             case 'b':
                 queue_size = atoi(optarg);
                 break;
+            case 's':
+                schedalg = optarg;
+                if (strcmp(schedalg, "FIFO") != 0 && strcmp(schedalg, "SFF") != 0) {
+                    fprintf(stderr, "scheduling algorithm must be one of FIFO or SFF\n");
+                    exit(1);
+                }
+                break;
             default:
-                fprintf(stderr, "usage: wserver [-d basedir] [-p port] [-t threads] [-b buffers]\n");
+                fprintf(stderr,
+                        "usage: wserver [-d basedir] [-p port] [-t threads] [-b buffers] [-s schedalg]\n");
                 exit(1);
         }
 
@@ -39,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     // create thread pool
     threadpool_t *pool;
-    assert((pool = threadpool_create(thread_count, queue_size)) != NULL);
+    assert((pool = threadpool_create(thread_count, queue_size, schedalg)) != NULL);
     printf("Thread pool started with %d threads and queue size of %d.\n",
            thread_count, queue_size);
 
@@ -77,8 +88,7 @@ int main(int argc, char *argv[]) {
             close_or_die(conn_fd);
             free(new_node);
             continue;
-        }
-        else {
+        } else {
             fprintf(stderr, "thread pool error: %d.\n", err);
             close_or_die(conn_fd);
             free(new_node);

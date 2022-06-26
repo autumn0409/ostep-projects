@@ -2,14 +2,16 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
-queue_t *create_new_queue(int queue_size) {
+queue_t *create_new_queue(int queue_size, char *schedalg) {
     queue_t *q = (queue_t *)malloc(sizeof(queue_t));
     if (!q)
         return q;
 
     q->count = 0;
     q->queue_size = queue_size;
+    q->schedalg = schedalg;
     q->head = NULL;
     q->tail = NULL;
 
@@ -42,8 +44,10 @@ int enqueue(queue_t *self, node_t *new_node) {
     } else {
         // find insert position
         node_t *left_node = self->tail;
-        while (left_node && left_node->file_st_size > new_node->file_st_size)
-            left_node = left_node->prev;
+        if (strcmp(self->schedalg, "SFF") == 0) {
+            while (left_node && left_node->file_st_size > new_node->file_st_size)
+                left_node = left_node->prev;
+        }
 
         // insert before head
         if (!left_node) {

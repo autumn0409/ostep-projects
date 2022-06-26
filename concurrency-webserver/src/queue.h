@@ -12,11 +12,12 @@ extern "C" {
 struct queue_t {
     int count;
     int queue_size;
+    char *schedalg;
     node_t *head;
     node_t *tail;
 };
 
-queue_t *create_new_queue(int queue_size);
+queue_t *create_new_queue(int queue_size, char *schedalg);
 void delete_queue(queue_t *self);
 int enqueue(queue_t *self, node_t *new_node);
 node_t *dequeue(queue_t *self);

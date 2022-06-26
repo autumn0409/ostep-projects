@@ -50,9 +50,10 @@ struct threadpool_t {
  * @brief Creates a threadpool_t object.
  * @param thread_count Number of worker threads.
  * @param queue_size   Size of the queue.
+ * @param schedalg     Scheduling algorithm to be performed.
  * @return a newly created thread pool or NULL
  */
-threadpool_t *threadpool_create(int thread_count, int queue_size);
+threadpool_t *threadpool_create(int thread_count, int queue_size, char *schedalg);
 
 /**
  * @function threadpool_add

@@ -20,7 +20,7 @@ static void *threadpool_thread(void *threadpool);
 
 int threadpool_free(threadpool_t *pool);
 
-threadpool_t *threadpool_create(int thread_count, int queue_size) {
+threadpool_t *threadpool_create(int thread_count, int queue_size, char *schedalg) {
     threadpool_t *pool;
 
     if (thread_count <= 0 || queue_size <= 0) {
@@ -37,7 +37,7 @@ threadpool_t *threadpool_create(int thread_count, int queue_size) {
 
     /* Allocate thread and task queue */
     pool->threads = (pthread_t *)malloc(sizeof(pthread_t) * thread_count);
-    pool->task_queue = create_new_queue(queue_size);
+    pool->task_queue = create_new_queue(queue_size, schedalg);
 
     /* Initialize mutex and conditional variable first */
     if ((pthread_mutex_init(&(pool->lock), NULL) != 0) ||
