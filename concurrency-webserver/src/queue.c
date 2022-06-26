@@ -68,9 +68,31 @@ int enqueue(queue_t *self, int fd, int p) {
         self->head = new_node;
         self->tail = new_node;
     } else {
-        self->tail->next = new_node;
-        new_node->prev = self->tail;
-        self->tail = new_node;
+        // find insert position
+        node_t *left_node = self->tail;
+        while (left_node && left_node->priority > p)
+            left_node = left_node->prev;
+
+        // insert before head
+        if (!left_node) {
+            self->head->prev = new_node;
+            new_node->next = self->head;
+            self->head = new_node;
+        }
+        // insert after tail
+        else if (left_node == self->tail) {
+            self->tail->next = new_node;
+            new_node->prev = self->tail;
+            self->tail = new_node;
+        }
+        // insert bewtween 2 exist nodes
+        else {
+            node_t *right_node = left_node->next;
+            left_node->next = new_node;
+            new_node->prev = left_node;
+            right_node->prev = new_node;
+            new_node->next = right_node;
+        }        
     }
 
     self->count++;
